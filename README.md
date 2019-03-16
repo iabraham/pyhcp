@@ -19,18 +19,18 @@ Most of these instructions are for a Linux machine and have been tested out usin
 
 To set up the Anaconda use the `environment.yml` file in the repo. The build numbers as well as version numbers have been excluded to let conda figure out what is best for the versioning on your platoform. 
 
-	`conda env create -f environment.yml`
+	conda env create -f environment.yml
 
 ## The module
-This is  a short explanation of the inner workings of the code in this repository. There are two main files, `download_hcp.py` and `automate.py``
+This is  a short explanation of the inner workings of the code in this repository. There are two main files, `download_hcp.py` and `automate.py`
 
  - `download_hcp` is best thought of as a module that implements sub functions for downloading, processing and cleaning up remainder files.
  - The three main functions are `download_subject(), process_subject()` and `clean_subject()`. 
- - The `download_subject()` function does what it says, it downloads data regarding a particular subject id like '100610'. _But_ it also filters the downloads for what _you_ need. Currenty the filtration keywords are hardcoded in `download_subject()`. You need to have AWS S3 access/credentials and `boto\boto3` installed for this function to work. 
+ - The `download_subject()` function does what it says, it downloads data regarding a particular subject id like '100610'. _But_ it also filters the downloads for what _you_ need. Currenty the filtration keywords are hardcoded in `download_subject()`. You need to have AWS S3 access/credentials and `boto3` installed for this function to work. 
  - We implement `download_hcp.process_subject()` to run the workbench command. It should takes the dense time series (*.dtseries*) and a parcellation label file (*.dlabel*) as input. It returns a list of output files. To call workbench it uses the [`subprocess`](https://docs.python.org/3.7/library/subprocess.html) module. You need to have workbench downloaded, installed, and its binaries added to your path for this to work. 
- - We need implement `download_hcp.clean_subject()` to clean up the large downloaded files once we have generated the parcellated time series. Its input is a list of files to keep on disk. It _should_ return nothing but utilizing `map` for parallelizing means functions _have_ to return something (see below).
+ - We implement `download_hcp.clean_subject()` to clean up the large downloaded files once we have generated the parcellated time series. Its input is a list of files to keep on disk. It _should_ return nothing but utilizing [`map`](https://docs.python.org/3/library/functions.html#map) for parallelizing means functions _have_ to return something (see below).
  - We also display disk usage statistics during runtime.
- - `automate.py` chainis together above functions using python's parallelism enabling modules.
+ - `automate.py` calls above functions using python's parallelism enabling modules
 
 #### Testing 1
 If you have Amazon S3 and `boto` set up correctly with your credentials, you should be able to activate your environment, fire up python, and run 
@@ -44,9 +44,9 @@ and get no errors.
 #### Testing 2
 If you have workbench installed and correctly added to path, then in your conda environment, you should be able to fire up python and say 
 
-	```import subprocess
-	   subprocess.run('wb_command --help') 
-	```
+	import subprocess
+	subprocess.run('wb_command --help') 
+	
 
 and get meaningful output. 
 
@@ -59,13 +59,13 @@ Prof. YMB suggested that having large amounts of RAM even with just a few cores 
 
 Note how `do_subject` really only does:
 	
-	`clean_subject(idx, process_subject(*download_subject(idx)))`
+	clean_subject(idx, process_subject(*download_subject(idx)))
 
 and parallelization only involves:
 
-	```with mp.Pool(2) as pool:
+	with mp.Pool(2) as pool:
     		result = pool.map(do_subject, subject_ids)
-	```
+	
 
 That's so clean even I am surprised that it worked out this way.
 
