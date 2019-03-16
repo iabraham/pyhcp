@@ -1,0 +1,5 @@
+HCP_1200/*
+__*
+.idea/
+*.bak
+!HCP_1200/.gitkeep
