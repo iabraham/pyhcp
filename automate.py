@@ -17,7 +17,7 @@ with mp.Pool(procs) as pool:
 
 print('Pickling returned data')
 
-# `result` is a list of dictionaries, but has no subjec
+# `result` is a list of dictionaries, but has no subject
 # identifier so we make a new dictionary
 
 data = dict(zip(subject_ids, result))
