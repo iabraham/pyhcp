@@ -35,9 +35,9 @@ This is  a short explanation of the inner workings of the code in this repositor
 #### Testing 1
 If you have Amazon S3 and `boto` set up correctly with your credentials, you should be able to activate your environment, fire up python, and run 
 
-	``` from download_hcp import *
+	from download_hcp import *
 	    dfiles = download_hcp('100610')
-	```
+	
 and get no errors. 
 
 
@@ -64,7 +64,7 @@ Note how `do_subject` really only does:
 and parallelization only involves:
 
 	with mp.Pool(2) as pool:
-    		result = pool.map(do_subject, subject_ids)
+    	    result = pool.map(do_subject, subject_ids)
 	
 
 That's so clean even I am surprised that it worked out this way.
@@ -76,41 +76,35 @@ That's so clean even I am surprised that it worked out this way.
 
 We utilize an R module in this repo. If you installed using the provided .yml file withour errors you should be good. Else you need to first, install rpy2 for conda using:
 
-	`conda install rpy2`
+	conda install rpy2
 
 on your environment in use. That should install the R packages needed to use R from within python. Next install the `cifti` package from CRAN:
-
-	```
+	
 	# import rpy2's package module
 	import rpy2.robjects.packages as rpackages
 	
 	# import R's utility package
 	utils = rpackages.importr('utils')
 	utils.install_packages('cifti')
-	```
 
 It should prompt you to pick a CRAN server for the session. If the installation is successful, it should end with
 
-	```
 	.
 	.
 	** building package indices
 	** installing vignettes
 	** testing if installed package can be loaded
 	* DONE (cifti)
-	```
 
 You can confirm successful installation  by opening python and running:
-	```
+	
 	from rpy2.robjects.packages import importr
 	importr('cifti')
-	```
+	
 which should return:
-
-	``` 
+ 
 	>>> importr('cifti')
 	rpy2.robjects.packages.Package as a <module 'cifti'>
-	```
 
 You may have to install a development packageis on your system for `xml2`, etc. Just use `sudo apt-get install xml2-dev` or whatever is missing. 
 
