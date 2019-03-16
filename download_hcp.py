@@ -33,7 +33,7 @@ def download_subject(sname):
     filtered_list = filtered_list1 + filtered_list2
 
     # Loop through keys and use download_file to download each key (file) to the directory where this code is running.
-    for key in filtered_list: # or filtered_list
+    for key in filtered_list: 
         try:
     	# Respect the directory structure
             os.makedirs(os.path.dirname(key), exist_ok=True)
@@ -57,6 +57,7 @@ def process_subject(dtseries, dlabels, sid):
     Arguments:
         dtseries - a list of dense time series
         dlabels - a list of parcellation labels
+        sid - subject identifier for printing/diagnostics
 
     Returns:
         a list containing the workbench generated files
@@ -69,8 +70,10 @@ def process_subject(dtseries, dlabels, sid):
 
     for label in dlabels:
         for series in dtseries:
+            # output file
+            opfile = series.split('dtseries')[0] + 'ptseries.nii' # Include dlabel info later
+            
             # Join together the components of the terminal command
-            opfile = series.split('dtseries')[0] + 'ptseries.nii' # Include label info later
             bash_command = " ".join([base_bash_command, series, label, "COLUMN", opfile])
 
             if not Path(opfile).is_file():
@@ -113,7 +116,7 @@ def process_ptseries(ptseries):
                    for key in cifti_dict['Parcel'].names}
 
     # Now parcel_dict is a python dictionary with keys as roi names, and values
-    # np.array corresponding to time series. 
+    # as a np.array corresponding to time series. 
 
     return parcel_dict 
 
@@ -126,8 +129,7 @@ def clean_subject(subject_id, keep_files):
         keep_files - A list of files to be kept, everything else will be removed.
 
     Returns:
-        True - if the operation was successful
-        False - if the opration was not successful
+        A python dictionary corresponding to the ROI/timeseries data
     """
 
     print('-'*10, ' Removing files for  ... ', subject_id, ' \n')
