@@ -55,7 +55,7 @@ and get meaningful output.
 Prof. YMB suggested that having large amounts of RAM even with just a few cores should allow for some parallelization: each of the `*_subject()` functions should be parallelizable using the [`multiprocessing`](https://docs.python.org/3.7/library/multiprocessing.html) package. This is easy a la [functional programming](https://en.wikipedia.org/wiki/Functional_programming)!
 
  - The `do_subject()` function chains together the above functions so that we can use `multiprocessing.Pool.map()` function on our list of subject ids. The last function in the chain should return the final python object to be stored on disk corresponding to each subject.
- - We implement a `process_ptseries()` function that can be called by `clean_subject()`. This function should take the generated _*.ptseries*_ object and return a first class python object containing ROI names and related time series. The `clean_subject()` function, that originally had nothing to return, can now return this object so that `map` works. (recall, `map` applies a function to a list, and in particular can _never_ change the length of a list).
+ - We implement a `process_ptseries()` function that can be called by `clean_subject()`. This function should take the generated _*ptseries*_ file and return a python dictionary containing ROI names and related time series. The `clean_subject()` function, that originally had nothing to return, can now return this object so that `map` works. (recall, `map` applies a function to each element of a list, and in particular can _never_ change the length of a list).
 
 Note how `do_subject` really only does:
 	
@@ -63,18 +63,18 @@ Note how `do_subject` really only does:
 
 and parallelization only involves:
 
-	with mp.Pool(2) as pool:
+	with mp.Pool(N) as pool:
     	    result = pool.map(do_subject, subject_ids)
 	
 
-That's so clean even I am surprised that it worked out this way.
+where $N$ is the number of parallel processes. That's so clean even I am surprised that it worked out this way.
 
 
 ---
 
 # Using rpy2 for CIFTI2
 
-We utilize an R module in this repo. If you installed using the provided .yml file withour errors you should be good. Else you need to first, install rpy2 for conda using:
+We utilize an R module in this repo. If you set up the environment using the provided .yml file, and it worked without errors you should be good. Else you need to first, install rpy2 for conda using:
 
 	conda install rpy2
 
@@ -96,7 +96,7 @@ It should prompt you to pick a CRAN server for the session. If the installation 
 	** testing if installed package can be loaded
 	* DONE (cifti)
 
-You can confirm successful installation  by opening python and running:
+You can confirm successful installation by opening python and running:
 	
 	from rpy2.robjects.packages import importr
 	importr('cifti')
