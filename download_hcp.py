@@ -47,7 +47,7 @@ def download_subject(sname):
             else:
                 raise KeyError
 
-   #return dense_time_series, parcellation_labels
+   #return dense_time_series, parcellation_labels, subject name
     return filtered_list1, filtered_list2, sname
 
 
@@ -82,15 +82,26 @@ def process_subject(dtseries, dlabels, sid):
             else:
                 print('Skipping parcellation: ', opfile, '\tFile Exists!')
 
-            file_list.append(opfile)
-        file_list.extend(dlabels)
+            file_list.append(Path(opfile))
+    
+    file_list.extend(list((map(Path, dlabels)))) 
 
     return file_list
 
 
 def du(path):
     """Disk usage in human readable format (e.g. '2,1GB')"""
-    return subprocess.check_output(['du','-sh', path]).split()[0].decode('utf-8')
+    import platform
+
+    beginning = '"{0:N2} MB" -f ((Get-ChildItem' 
+    end = '-Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)'
+    winstrg = ' '.join([beginning, path, end])
+
+    if platform.system() in ['Linux', 'Darwin']:
+        return subprocess.check_output(['du','-sh', path]).split()[0].decode('utf-8')
+    else:
+        return subprocess.check_output(['powershell', winstrng])
+
 
 
 def process_ptseries(ptseries):
@@ -118,7 +129,7 @@ def process_ptseries(ptseries):
     # Now parcel_dict is a python dictionary with keys as roi names, and values
     # as a np.array corresponding to time series. 
 
-    return parcel_dict 
+    return ptseries, parcel_dict 
 
 
 def clean_subject(subject_id, keep_files):
@@ -135,20 +146,21 @@ def clean_subject(subject_id, keep_files):
     print('-'*10, ' Removing files for  ... ', subject_id, ' \n')
 
     del_files = list()
-    spath = 'HCP_1200/' + subject_id
+    spath = os.path.join('HCP_1200', subject_id)
 
     print('Size before:\t', du(spath))
 
     # Walk path and generate list of files to delete
-    for root, folders, files in os.walk('HCP_1200/'+subject_id):
+    for root, folders, files in os.walk(spath):
         if not folders:
             for file_name in files:
                 test_file  = os.path.join(root,file_name)
-                if test_file in keep_files:
+                if Path(test_file) in keep_files:
                     pass
                 else:
                     del_files.append(test_file)
 
+    
     # Now delete them and check if there are errors
     for file_name in del_files:
         try:
@@ -161,9 +173,9 @@ def clean_subject(subject_id, keep_files):
 
     # Call the process_ptseries() function to generate python object from the 
     # CIFTI file
-    pts = [f for f in keep_files if 'ptseries' in f]
+    pts = [str(f) for f in keep_files if 'ptseries' in str(f)]
     
-    return process_ptseries(pts.pop())
+    return list(map(process_ptseries, pts))
 
 
 def do_subject(idx):
