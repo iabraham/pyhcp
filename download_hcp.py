@@ -95,12 +95,12 @@ def du(path):
 
     beginning = '"{0:N2} MB" -f ((Get-ChildItem' 
     end = '-Recurse | Measure-Object -Property Length -Sum -ErrorAction Stop).Sum / 1MB)'
-    winstrg = ' '.join([beginning, path, end])
+    win_string = ' '.join([beginning, path, end])
 
     if platform.system() in ['Linux', 'Darwin']:
         return subprocess.check_output(['du','-sh', path]).split()[0].decode('utf-8')
     else:
-        return subprocess.check_output(['powershell', winstrng])
+        return subprocess.check_output(['powershell', win_string])
 
 
 
@@ -188,5 +188,4 @@ def do_subject(idx):
 
     print("="*30, " Doing subject:\t ", idx, "="*30)
     return clean_subject(idx, process_subject(*download_subject(idx)))
-
 

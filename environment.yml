@@ -1,4 +1,4 @@
-name: hcp 
+name: botohcp 
 channels:
   - defaults
 dependencies:
