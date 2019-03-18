@@ -3,3 +3,4 @@ __*
 .idea/
 *.bak
 !HCP_1200/.gitkeep
+*.pyc
