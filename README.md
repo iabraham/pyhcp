@@ -38,7 +38,7 @@ This is  a short explanation of the inner workings of the code in this repositor
 If you have Amazon S3 and `boto` set up correctly with your credentials, you should be able to activate your environment, fire up python, and run 
 
 	from download_hcp import *
-	    dfiles = download_hcp('100610')
+	    dfiles = download_subject('100610')
 	
 and get no errors. 
 
@@ -47,7 +47,7 @@ and get no errors.
 If you have workbench installed and correctly added to path, then in your conda environment, you should be able to fire up python and say 
 
 	import subprocess
-	subprocess.run('wb_command --help') 
+	subprocess.run(['wb_command','-help'])
 	
 
 and get meaningful output. 
