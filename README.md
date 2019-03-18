@@ -69,12 +69,14 @@ and parallelization only involves:
     	    result = pool.map(do_subject, subject_ids)
 	
 
-where $N$ is the number of parallel processes. That's so clean even I am surprised that it worked out this way.
+where `N` is the number of parallel processes. That's so clean even I am surprised that it worked out this way.
 
 
 ---
 
 # Using rpy2 for CIFTI2
+
+> **Note:** The installation of `R::cifti` below is no longer needed to be done manually since [v2](https://github.com/iabraham/pyhcp/releases/tag/v0.2). The module should automatically check if it exists, and if not, install it for you. 
 
 We utilize an R module in this repo. If you set up the environment using the provided .yml file, and it worked without errors you should be good. Else you need to first, install rpy2 for conda using:
 
