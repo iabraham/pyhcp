@@ -1,5 +1,7 @@
 # PyHCP
 
+See [release notes](https://github.com/iabraham/pyhcp/releases).
+
 ## Introduction 
 
 This is a repo to download [HCP](https://db.humanconnectome.org/) data using Python, subject by subject, pre-process it to extract timeseries data, and then delete the large image files in parallel all using Python and R. To use this repo you will need:
