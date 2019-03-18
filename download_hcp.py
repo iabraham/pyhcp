@@ -121,15 +121,15 @@ def process_ptseries(ptseries):
 
     # Extract the cifti data into a python dictionary
     cifti_dict = {key: datum.rx2(key) for key in datum.names}
+    
+    # The key called 'Parcel' has data regarding ROI and voxel
+    roi_names = list(cifti_dict['Parcel'].names)
 
-    # The key called 'Parcel' has data regarding ROI and time series
-    parcel_dict = {key: np.asarray((cifti_dict['Parcel'].rx2(key))) 
-                   for key in cifti_dict['Parcel'].names}
+    # The key called 'data' has a 'R' object matrix 
+    # We create a dictionary with roi_names as keys and rows 
+    # of data matrix as values and return it 
 
-    # Now parcel_dict is a python dictionary with keys as roi names, and values
-    # as a np.array corresponding to time series. 
-
-    return ptseries, parcel_dict 
+    return ptseries, dict(zip(roi_names, np.asarray(cifti_dict['data']))) 
 
 
 def clean_subject(subject_id, keep_files):
