@@ -127,11 +127,14 @@ The code on successful run should place a file called `hcp_data.bin` in the `HCP
     print('Have subjects:')
 
     for key in data.keys():
-        print('\t' + key)
+        print('\t' + str(key))
 
     for key, scans in data.items():
-        print('\nFor subject: ' + key + '\thave:')
-        for scan, data_dict in scans:
-            print('Scan: \t', scan)
-            print('With ROIs:\n', '\n'.join(list(data_dict.keys())))
+        print('\nFor subject: ' + str(key) + '\thave:')
+        for scan, data_dict in scans.items():
+            if scan != 'metadata':
+                print('Scan: \t', scan)
+                print('With ROIs:\n', '\n'.join(list(data_dict.keys())))
+            else:
+                print('Subject age:\t', data_dict.loc['Age'])
 

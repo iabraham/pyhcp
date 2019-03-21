@@ -3,6 +3,14 @@ import os, subprocess
 from pathlib import Path
 from rpy2.robjects.packages import importr
 import numpy as np 
+import pandas as pd
+
+
+# Load meta data as pandas data frame. Don't put this inside a function, 
+# so we don't have to read file from disk each time. 
+
+meta_file = Path('HCP_1200/meta_data.csv')
+meta_data = pd.read_csv(meta_file, index_col='Subject')
 
 
 def download_subject(sname):
@@ -111,7 +119,7 @@ def process_ptseries(ptseries):
         ptseries - The parcellated timeseries file.
 
     Returns:
-        data_dict - A dictionary with keys as ROI names and values as timeseries
+        datum_dict - A dictionary with keys as ROI names and values as timeseries
      """
     # Import the R module
     cifti = importr('cifti')
@@ -129,7 +137,9 @@ def process_ptseries(ptseries):
     # We create a dictionary with roi_names as keys and rows 
     # of data matrix as values and return it 
 
-    return ptseries, dict(zip(roi_names, np.asarray(cifti_dict['data']))) 
+    datum_dict = dict(zip(roi_names, np.asarray(cifti_dict['data']))) 
+
+    return ptseries, datum_dict 
 
 
 def clean_subject(subject_id, keep_files):
@@ -144,6 +154,7 @@ def clean_subject(subject_id, keep_files):
     """
 
     print('-'*10, ' Removing files for  ... ', subject_id, ' \n')
+    global meta_data
 
     del_files = list()
     spath = os.path.join('HCP_1200', subject_id)
@@ -174,8 +185,12 @@ def clean_subject(subject_id, keep_files):
     # Call the process_ptseries() function to generate python object from the 
     # CIFTI file
     pts = [str(f) for f in keep_files if 'ptseries' in str(f)]
-    
-    return list(map(process_ptseries, pts))
+    return_dict = dict(map(process_ptseries, pts))
+
+    # Add on the associated meta_data
+    return_dict['metadata'] = meta_data.loc[int(subject_id)]
+
+    return return_dict
 
 
 def do_subject(idx):
