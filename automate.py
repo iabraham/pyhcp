@@ -25,7 +25,7 @@ def main():
     subject_ids = [idx.strip() for idx in subject_ids]
 
     # Download and process. `procs` is # of processors
-    procs = 2
+    procs = 4
     
     with mp.Pool(procs) as pool:
         result = pool.map(do_subject, subject_ids)
