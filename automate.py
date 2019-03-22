@@ -2,7 +2,8 @@ from download_hcp import do_subject
 import multiprocessing as mp 
 import gzip, pickle
 from rpy2.robjects.packages import importr
-
+import zipshelve
+from pickle import HIGHEST_PROTOCOL
 
 def main():
 
@@ -28,17 +29,14 @@ def main():
     procs = 4
     
     with mp.Pool(procs) as pool:
-        result = pool.map(do_subject, subject_ids)
+        result = zip(subject_ids, pool.map(do_subject, subject_ids))
     
-    print('Pickling returned data')
+    print('Shelving returned data')
+    fin = 'HCP_1200/hcp_data'
 
-    # `result` is a list of dictionaries, but has no subject
-    # identifier so we make a new dictionary
-    
-    data = dict(zip(map(int,subject_ids), result))
-    
-    with gzip.open('HCP_1200/hcp_data.bin', 'wb') as stream:
-        pickle.dump(data, stream)
+    with zipshelve.open(fin, protocol=HIGHEST_PROTOCOL) as shelf:
+        for key, value in result:
+            shelf[key] = value
 
     # Serial instead of parallel?
 
