@@ -38,8 +38,8 @@ This is  a short explanation of the inner workings of the code in this repositor
 If you have Amazon S3 and `boto` set up correctly with your credentials, you should be able to activate your environment, fire up python, and run 
 
 ```Python
-    from download_hcp import *
-    dfiles = download_subject('100610')
+from download_hcp import *
+dfiles = download_subject('100610')
 ```
 and get no errors. 
 
@@ -48,8 +48,8 @@ and get no errors.
 If you have workbench installed and correctly added to path, then in your conda environment, you should be able to fire up python and say 
 
 ```Python
-    import subprocess
-    subprocess.run(['wb_command','-help'])
+import subprocess
+subprocess.run(['wb_command','-help'])
 ```
 and get meaningful output. 
 
@@ -62,13 +62,13 @@ Prof. YMB suggested that having large amounts of RAM even with just a few cores 
 
 Note how `do_subject` really only does:
 	
-	clean_subject(idx, process_subject(*download_subject(idx)))
+```clean_subject(idx, process_subject(*download_subject(idx)))```
 
 and parallelization only involves:
 
 ```Python
-    with mp.Pool(N) as pool:
-        result = pool.map(do_subject, subject_ids)
+with mp.Pool(N) as pool:
+    result = pool.map(do_subject, subject_ids)
 ```
 where `N` is the number of parallel processes. That's so clean even I am surprised that it worked out this way.
 
@@ -80,37 +80,37 @@ where `N` is the number of parallel processes. That's so clean even I am surpris
 
 We utilize an R module in this repo. If you set up the environment using the provided .yml file, and it worked without errors you should be good. Else you need to first, install rpy2 for conda using:
 
-	conda install rpy2
+```conda install rpy2```
 
 on your environment in use. That should install the R packages needed to use R from within python. Next install the `cifti` package from CRAN:
 
 ```Python
-    # import rpy2's package module
-    import rpy2.robjects.packages as rpackages
+# import rpy2's package module
+import rpy2.robjects.packages as rpackages
 	
-    # import R's utility package
-    utils = rpackages.importr('utils')
-    utils.install_packages('cifti')
+# import R's utility package
+utils = rpackages.importr('utils')
+utils.install_packages('cifti')
 ```
 It should prompt you to pick a CRAN server for the session. If the installation is successful, it should end with
 
-	.
-	.
-	** building package indices
-	** installing vignettes
-	** testing if installed package can be loaded
-	* DONE (cifti)
+    .
+    .
+    ** building package indices
+    ** installing vignettes
+    ** testing if installed package can be loaded
+    * DONE (cifti)
 
 You can confirm successful installation by opening python and running:
 
 ```Python
-    from rpy2.robjects.packages import importr
-    importr('cifti')
+from rpy2.robjects.packages import importr
+importr('cifti')
 ```
 which should return:
  
-	>>> importr('cifti')
-	rpy2.robjects.packages.Package as a <module 'cifti'>
+    >>> importr('cifti')
+    rpy2.robjects.packages.Package as a <module 'cifti'>
 
 You may have to install a development packageis on your system for `xml2`, etc. Just use `sudo apt-get install xml2-dev` or whatever is missing. 
 
