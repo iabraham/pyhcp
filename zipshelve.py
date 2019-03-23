@@ -245,19 +245,6 @@ class ZipShelf(shelve.Shelf):
         return fileout
 
 
-#        fin = file(filein, 'r')
-#        fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb.gz')
-#        fout = gzip.open(fileout, 'w')
-#
-#        try:
-#            for all in fin:
-#                fout.write(all)
-#        finally:
-#            fout.close()
-#            fin.close()
-#            time.sleep(3)
-#        return fileout
-
     # gunzip the file into temporary location, keep original
     def _gunzip(self, filein):
         """
@@ -279,19 +266,6 @@ class ZipShelf(shelve.Shelf):
 
         return fileout
 
-
-#        fin = gzip.open(filein, 'r')
-#        fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb')
-#        fout = file(fileout, 'w')
-#
-#        try:
-#            for all in fin:
-#                fout.write(all)
-#        finally:
-#            fout.close()
-#            fin.close()
-#            time.sleep(3)
-#        return fileout
 
     # some context manager functionality
     def __enter__(self):
