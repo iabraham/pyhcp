@@ -33,8 +33,8 @@ import zlib  # use zlib to compress DB-content
 import shelve
 import shutil
 from io import BytesIO
+import errno
 import logging as logger
-
 # =============================================================================
 
 
@@ -74,7 +74,7 @@ class ZipShelf(shelve.Shelf):
                     size1 = os.path.getsize(filename)
                     size2 = os.path.getsize(filename_)
                     logger.info("GZIP uncompression %s: %.1f%%" % (filename, (size2 * 100.0) / size1))
-#                filename = filename_
+
                 self.__filename = filename_
                 self.__remove = True
             elif os.path.exists(filename) and mode != 'r':
@@ -94,7 +94,7 @@ class ZipShelf(shelve.Shelf):
                 if not self.__silent:
                     size2 = os.path.getsize(filename_)
                     logger.info("GZIP uncompression %s: %.1f%%" % (filename, (size2 * 100.0) / size1))
-#                filename = filename_
+
                 self.__gzip = True
                 self.__filename = filename_
                 self.__remove = False
@@ -178,7 +178,7 @@ class ZipShelf(shelve.Shelf):
         Gzip the file ``in-place''
         
         It is better to use here ``os.system'' or ``popen''-family,
-        but it does not work properly for multiprocessing environemnt
+        but it does not work properly for multiprocessing environment
         
         """
         if os.path.exists(filein + '.gz'):
@@ -189,11 +189,8 @@ class ZipShelf(shelve.Shelf):
          
         if os.path.exists(fileout):
             # rename the temporary file 
-            shutil.move(fileout, filein + '.gz')
-            
-            import time
-            time.sleep(3)
-            
+            safe_move(fileout, filein + '.gz')
+
             # remove the original
             os.remove(filein)
 
@@ -203,7 +200,7 @@ class ZipShelf(shelve.Shelf):
         Gunzip the file ``in-place''
         
         It is better to use here ``os.system'' or ``popen''-family,
-        but unfortunately it does not work properly for multithreaded environemnt
+        but unfortunately it does not work properly for multi-threaded environment
         
         """
         filename = filein[:-3]
@@ -215,10 +212,7 @@ class ZipShelf(shelve.Shelf):
                 
         if os.path.exists(fileout):
             # rename the temporary file 
-            shutil.move(fileout, filename)
-            
-            import time
-            time.sleep(3)
+            safe_move(fileout, filename)
             
             # remove the original
             os.remove(filein)
@@ -243,7 +237,6 @@ class ZipShelf(shelve.Shelf):
                     logger.error(e)
         
         return fileout
-
 
     # gunzip the file into temporary location, keep original
     def _gunzip(self, filein):
@@ -311,6 +304,42 @@ ZipShelf.__setitem__ = _zip_setitem
 
 # =============================================================================
 # helper function to access ZipShelve data base
+def safe_move(src, dst):
+    """Rename a file from ``src`` to ``dst``.
+
+    *   Moves must be atomic.  ``shutil.move()`` is not atomic.
+        Note that multiple threads may try to write to the cache at once,
+        so atomicity is required to ensure the serving on one thread doesn't
+        pick up a partially saved image from another thread.
+
+    *   Moves must work across filesystems.  Often temp directories and the
+        cache directories live on different filesystems.  ``os.rename()`` can
+        throw errors if run across filesystems.
+
+    So we try ``os.rename()``, but if we detect a cross-filesystem copy, we
+    switch to ``shutil.move()`` with some wrappers to make it atomic.
+    """
+    try:
+        os.rename(src, dst)
+    except OSError as err:
+
+        if err.errno == errno.EXDEV:
+            # Generate a unique ID, and copy `<src>` to the target directory
+            # with a temporary name `<dst>.<ID>.tmp`.  Because we're copying
+            # across a filesystem boundary, this initial copy may not be
+            # atomic.  We intersperse a random UUID so if different processes
+            # are copying into `<dst>`, they don't overlap in their tmp copies.
+            copy_id = uuid.uuid4()
+            tmp_dst = "%s.%s.tmp" % (dst, copy_id)
+            shutil.copyfile(src, tmp_dst)
+
+            # Then do an atomic rename onto the new name, and clean up the
+            # source image.
+            os.rename(tmp_dst, dst)
+            os.unlink(src)
+        else:
+            raise
+
 
 def open(filename, mode='c', protocol=HIGHEST_PROTOCOL, compress_level=zlib.Z_BEST_COMPRESSION,
          writeback=False, silent=True):
