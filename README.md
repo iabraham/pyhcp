@@ -37,19 +37,20 @@ This is  a short explanation of the inner workings of the code in this repositor
 #### Testing 1
 If you have Amazon S3 and `boto` set up correctly with your credentials, you should be able to activate your environment, fire up python, and run 
 
-	from download_hcp import *
-	    dfiles = download_subject('100610')
-	
+```Python
+    from download_hcp import *
+    dfiles = download_subject('100610')
+```
 and get no errors. 
 
 
 #### Testing 2
 If you have workbench installed and correctly added to path, then in your conda environment, you should be able to fire up python and say 
 
-	import subprocess
-	subprocess.run(['wb_command','-help'])
-	
-
+```Python
+    import subprocess
+    subprocess.run(['wb_command','-help'])
+```
 and get meaningful output. 
 
 ## Parallelizing 
@@ -65,12 +66,11 @@ Note how `do_subject` really only does:
 
 and parallelization only involves:
 
-	with mp.Pool(N) as pool:
-    	    result = pool.map(do_subject, subject_ids)
-	
-
+```Python
+    with mp.Pool(N) as pool:
+        result = pool.map(do_subject, subject_ids)
+```
 where `N` is the number of parallel processes. That's so clean even I am surprised that it worked out this way.
-
 
 ---
 
@@ -83,14 +83,15 @@ We utilize an R module in this repo. If you set up the environment using the pro
 	conda install rpy2
 
 on your environment in use. That should install the R packages needed to use R from within python. Next install the `cifti` package from CRAN:
-	
-	# import rpy2's package module
-	import rpy2.robjects.packages as rpackages
-	
-	# import R's utility package
-	utils = rpackages.importr('utils')
-	utils.install_packages('cifti')
 
+```Python
+    # import rpy2's package module
+    import rpy2.robjects.packages as rpackages
+	
+    # import R's utility package
+    utils = rpackages.importr('utils')
+    utils.install_packages('cifti')
+```
 It should prompt you to pick a CRAN server for the session. If the installation is successful, it should end with
 
 	.
@@ -101,10 +102,11 @@ It should prompt you to pick a CRAN server for the session. If the installation 
 	* DONE (cifti)
 
 You can confirm successful installation by opening python and running:
-	
-	from rpy2.robjects.packages import importr
-	importr('cifti')
-	
+
+```Python
+    from rpy2.robjects.packages import importr
+    importr('cifti')
+```
 which should return:
  
 	>>> importr('cifti')
