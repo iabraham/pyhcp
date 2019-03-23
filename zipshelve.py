@@ -1,17 +1,17 @@
-# Code modified from on: 
+# Code modified from: 
 # https://gitlab.cern.ch/lhcb/Analysis/blob/cc7f3b47bba84adab101ffa3be44480fff786ee4/Analysis/Ostap/python/Ostap/ZipShelve.py
-# Above code is Python2, tenatively modified to suit Python3
+# Above code is Python2, tenatively modified to Python3
 # =============================================================================
 """ This is zip-version of shelve database.
 
 Keeping the same interface and functionality as shelve data base,
-ZipShelf allows much more compact file size through the on-flight
-compression of the content
+ZipShelf allows much more compact file size through the on-the-fly
+compression of content
 
-However is contains several new features:
+However it contains several new features:
 
  - Optionally it is possible to perform the compression
-   of the whole data base, that can be rathe useful fo data base
+   of the whole data base, that can be rather useful for data base
    with large amount of keys
 """
 # =============================================================================
@@ -34,7 +34,6 @@ import shelve
 import shutil
 from io import BytesIO
 import logging as logger
-
 
 # =============================================================================
 
@@ -64,7 +63,7 @@ class ZipShelf(shelve.Shelf):
 
         if filename.rfind('.gz') + 3 == len(filename):
 
-            if os.path.exists(filename) and 'r' == mode:
+            if os.path.exists(filename) and mode == 'r':
                 # gunzip into temporary location
                 filename_ = self._gunzip(filename)
 
@@ -78,7 +77,7 @@ class ZipShelf(shelve.Shelf):
 #                filename = filename_
                 self.__filename = filename_
                 self.__remove = True
-            elif os.path.exists(filename) and 'r' != mode:
+            elif os.path.exists(filename) and mode != 'r':
                 filename_ = filename[:-3]
 
                 # remove existing file (if needed)
@@ -126,12 +125,11 @@ class ZipShelf(shelve.Shelf):
         List the available keys (patterns included). Pattern matching is performed according to
         fnmatch/glob/shell rules [it is not regex!]
         """
-        keys_ = self.keys()
-        keys_.sort()
         if pattern:
             import fnmatch
-            _keys = [k for k in keys_ if fnmatch.fnmatchcase(k, pattern)]
-            keys_ = _keys
+            keys_ = [k for k in self.keys() if fnmatch.fnmatchcase(k, pattern)]
+        else:
+            keys_ = self.keys()
 
         for key in keys_:
             print(key)
@@ -157,7 +155,7 @@ class ZipShelf(shelve.Shelf):
 
         if self.__remove and os.path.exists(self.__filename):
             if not self.__silent:
-                logger.info('REMOVE: ', self.__filename)
+                logger.info('REMOVING: ', self.__filename)
             os.remove(self.__filename)
 
         if self.__gzip and os.path.exists(self.__filename):
@@ -233,20 +231,32 @@ class ZipShelf(shelve.Shelf):
         if not os.path.exists(filein):
             raise NameError("GZIP: non existing file: " + filein)
 
-        import tempfile, gzip, time
+        import tempfile, gzip
 
-        fin = file(filein, 'r')
-        fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb.gz')
-        fout = gzip.open(fileout, 'w')
-
-        try:
-            for all in fin:
-                fout.write(all)
-        finally:
-            fout.close()
-            fin.close()
-            time.sleep(3)
+        with file(filein, 'r') as fin:
+            fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb.gz')
+            with gzip.open(fileout, 'w') as fout:
+                try:
+                    for f in fin:
+                        fout.write(f)
+                except Exception as e:
+                    logger.error(e)
+        
         return fileout
+
+
+#        fin = file(filein, 'r')
+#        fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb.gz')
+#        fout = gzip.open(fileout, 'w')
+#
+#        try:
+#            for all in fin:
+#                fout.write(all)
+#        finally:
+#            fout.close()
+#            fin.close()
+#            time.sleep(3)
+#        return fileout
 
     # gunzip the file into temporary location, keep original
     def _gunzip(self, filein):
@@ -256,20 +266,32 @@ class ZipShelf(shelve.Shelf):
         if not os.path.exists(filein):
             raise NameError("GUNZIP: non existing file: " + filein)
 
-        import gzip, tempfile, time
+        import gzip, tempfile
 
-        fin = gzip.open(filein, 'r')
-        fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb')
-        fout = file(fileout, 'w')
+        with gzip.open(fielin, 'r') as fin:
+            fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb')
+            with file(fileout, 'w') as fout:
+                try:
+                    for f in fin:
+                        fout.write(f)
+                except Exception as e:
+                    logger.error(e)
 
-        try:
-            for all in fin:
-                fout.write(all)
-        finally:
-            fout.close()
-            fin.close()
-            time.sleep(3)
         return fileout
+
+
+#        fin = gzip.open(filein, 'r')
+#        fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb')
+#        fout = file(fileout, 'w')
+#
+#        try:
+#            for all in fin:
+#                fout.write(all)
+#        finally:
+#            fout.close()
+#            fin.close()
+#            time.sleep(3)
+#        return fileout
 
     # some context manager functionality
     def __enter__(self):
@@ -314,7 +336,7 @@ ZipShelf.__setitem__ = _zip_setitem
 
 
 # =============================================================================
-# helper finction to access ZipShelve data base
+# helper function to access ZipShelve data base
 
 def open(filename, mode='c', protocol=HIGHEST_PROTOCOL, compress_level=zlib.Z_BEST_COMPRESSION,
          writeback=False, silent=True):
@@ -366,7 +388,7 @@ class TmpZipShelf(ZipShelf):
 
 
 # =============================================================================
-# helper finction to open TEMPORARY ZipShelve data base
+# helper function to open TEMPORARY ZipShelve data base
 
 
 def tmpdb(protocol=HIGHEST_PROTOCOL, compress_level=zlib.Z_BEST_COMPRESSION, silent=True):
