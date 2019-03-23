@@ -114,27 +114,3 @@ You may have to install a development packageis on your system for `xml2`, etc. 
 
 Alternatively, you can set up the environment using the `environment.yml` file.
 
-# How to use pickled Py object
-
-The code on successful run should place a file called `hcp_data.bin` in the `HCP_1200` folder. You can access the content of this file as follows:
-
-    import gzip, pickle
-    import numpy as np
-
-    with gzip.open('hcp_data.bin') as s:
-        data = pickle.load(s)
-
-    print('Have subjects:')
-
-    for key in data.keys():
-        print('\t' + str(key))
-
-    for key, scans in data.items():
-        print('\nFor subject: ' + str(key) + '\thave:')
-        for scan, data_dict in scans.items():
-            if scan != 'metadata':
-                print('Scan: \t', scan)
-                print('With ROIs:\n', '\n'.join(list(data_dict.keys())))
-            else:
-                print('Subject age:\t', data_dict.loc['Age'])
-
