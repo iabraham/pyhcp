@@ -67,29 +67,35 @@ class ZipShelf(shelve.Shelf):
             if os.path.exists(filename) and 'r' == mode:
                 # gunzip into temporary location
                 filename_ = self._gunzip(filename)
+
                 if not os.path.exists(filename_):
                     raise TypeError("Unable to gunzip properly: %s" % filename)
+
                 if not self.__silent:
                     size1 = os.path.getsize(filename)
                     size2 = os.path.getsize(filename_)
                     logger.info("GZIP uncompression %s: %.1f%%" % (filename, (size2 * 100.0) / size1))
-                filename = filename_
+#                filename = filename_
                 self.__filename = filename_
                 self.__remove = True
             elif os.path.exists(filename) and 'r' != mode:
-                # unzip in place
                 filename_ = filename[:-3]
-                # remove existing file (if needed) 
-                if os.path.exists(filename_): os.remove(filename_)
+
+                # remove existing file (if needed)
+                if os.path.exists(filename_):
+                    os.remove(filename_)
                 size1 = os.path.getsize(filename)
-                # gunzip in place 
+
+                # gunzip in place
                 self.__in_place_gunzip(filename)
+
                 if not os.path.exists(filename_):
                     raise TypeError("Unable to gunzip properly: %s" % filename)
+
                 if not self.__silent:
                     size2 = os.path.getsize(filename_)
                     logger.info("GZIP uncompression %s: %.1f%%" % (filename, (size2 * 100.0) / size1))
-                filename = filename_
+#                filename = filename_
                 self.__gzip = True
                 self.__filename = filename_
                 self.__remove = False
@@ -157,12 +163,14 @@ class ZipShelf(shelve.Shelf):
         if self.__gzip and os.path.exists(self.__filename):
             # get the initial size 
             size1 = os.path.getsize(self.__filename)
+
             # gzip the file
             self.__in_place_gzip(self.__filename)
             
             if not os.path.exists(self.__filename + '.gz'):
                 logger.warning('Unable to compress the file %s ' % self.__filename)
             size2 = os.path.getsize(self.__filename + '.gz')
+
             if not self.__silent:
                 logger.info('GZIP compression %s: %.1f%%' % (self.__filename, (size2 * 100.0) / size1))
 
@@ -201,7 +209,8 @@ class ZipShelf(shelve.Shelf):
         
         """
         filename = filein[:-3]
-        if os.path.exists(filename): os.remove(filename)
+        if os.path.exists(filename):
+            os.remove(filename)
 
         # gunzip the file 
         fileout = self._gunzip(filein)
@@ -224,7 +233,7 @@ class ZipShelf(shelve.Shelf):
         if not os.path.exists(filein):
             raise NameError("GZIP: non existing file: " + filein)
 
-        import tempfile, gzip
+        import tempfile, gzip, time
 
         fin = file(filein, 'r')
         fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb.gz')
@@ -236,7 +245,6 @@ class ZipShelf(shelve.Shelf):
         finally:
             fout.close()
             fin.close()
-            import time
             time.sleep(3)
         return fileout
 
@@ -248,7 +256,7 @@ class ZipShelf(shelve.Shelf):
         if not os.path.exists(filein):
             raise NameError("GUNZIP: non existing file: " + filein)
 
-        import gzip, tempfile
+        import gzip, tempfile, time
 
         fin = gzip.open(filein, 'r')
         fd, fileout = tempfile.mkstemp(prefix='tmp_', suffix='_zdb')
@@ -260,7 +268,6 @@ class ZipShelf(shelve.Shelf):
         finally:
             fout.close()
             fin.close()
-            import time
             time.sleep(3)
         return fileout
 
@@ -299,7 +306,7 @@ def _zip_setitem(self, key, value):
     f = BytesIO()
     p = Pickler(f, self._protocol)
     p.dump(value)
-    self.dict[key] = zlib.compress(f.getvalue(), self.compresslevel)
+    self.dict[key] = zlib.compress(f.getvalue(), self.compress_level)
 
 
 ZipShelf.__getitem__ = _zip_getitem
