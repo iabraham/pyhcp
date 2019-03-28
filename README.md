@@ -7,7 +7,7 @@ See [release notes](https://github.com/iabraham/pyhcp/releases).
 This is a repo to download [HCP](https://db.humanconnectome.org/) data using Python, subject by subject, pre-process it to extract timeseries data, and then delete the large image files in parallel all using Python and R. To use this repo you will need:
 
  * Anaconda and Python >= 3.6
- * An account with the HCP database
+ * An account with the HCP database. In using this repository you agree to the [Open Access Terms](https://www.humanconnectome.org/study/hcp-young-adult/document/wu-minn-hcp-consortium-open-access-data-use-terms) established by the Connectome Consortium. 
  * Amazon S3 access with the HCP database. We will use the `boto3` package for Amazon S3 access. See [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration'') on configuring your credentials. 
  * [Workbench](https://www.humanconnectome.org/software/connectome-workbench) installed and the `wb_command` added to your PATH variable.
 
