@@ -1,0 +1,1 @@
+The file `metadata.csv` contains publicly accessible metadata regarding the scans in the HCP S1200 release. In using this repository and the data contained in it you are agreeing to the [Open Access Terms](https://www.humanconnectome.org/study/hcp-young-adult/document/wu-minn-hcp-consortium-open-access-data-use-terms) established by the Connectome Organization. 
