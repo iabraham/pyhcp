@@ -7,7 +7,7 @@ See [release notes](https://github.com/iabraham/pyhcp/releases).
 This is a repo to download [HCP](https://db.humanconnectome.org/) data using Python, subject by subject, pre-process it to extract timeseries data, and then delete the large image files in parallel all using Python and R. To use this repo you will need:
 
  * Anaconda and Python >= 3.6
- * An account with the HCP database
+ * An account with the HCP database. In using this repository you agree to the [Open Access Terms](https://www.humanconnectome.org/study/hcp-young-adult/document/wu-minn-hcp-consortium-open-access-data-use-terms) established by the Connectome Consortium. 
  * Amazon S3 access with the HCP database. We will use the `boto3` package for Amazon S3 access. See [here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration'') on configuring your credentials. 
  * [Workbench](https://www.humanconnectome.org/software/connectome-workbench) installed and the `wb_command` added to your PATH variable.
 
@@ -29,8 +29,8 @@ This is  a short explanation of the inner workings of the code in this repositor
  - `download_hcp` is best thought of as a module that implements sub functions for downloading, processing and cleaning up remainder files.
  - The three main functions are `download_subject(), process_subject()` and `clean_subject()`. 
  - The `download_subject()` function does what it says, it downloads data regarding a particular subject id like '100610'. _But_ it also filters the downloads for what _you_ need. Currenty the filtration keywords are hardcoded in `download_subject()`. You need to have AWS S3 access/credentials and `boto3` installed for this function to work. 
- - We implement `download_hcp.process_subject()` to run the workbench command. It should takes the dense time series (*.dtseries*) and a parcellation label file (*.dlabel*) as input. It returns a list of output files. To call workbench it uses the [`subprocess`](https://docs.python.org/3.7/library/subprocess.html) module. You need to have workbench downloaded, installed, and its binaries added to your path for this to work. 
- - We implement `download_hcp.clean_subject()` to clean up the large downloaded files once we have generated the parcellated time series. Its input is a list of files to keep on disk. It _should_ return nothing but utilizing [`map`](https://docs.python.org/3/library/functions.html#map) for parallelizing means functions _have_ to return something (see below).
+ - We implement `process_subject()` to run the workbench command. It should takes the dense time series (*.dtseries*) and a parcellation label file (*.dlabel*) as input. It returns a list of output files. To call workbench it uses the [`subprocess`](https://docs.python.org/3.7/library/subprocess.html) module. You need to have workbench downloaded, installed, and its binaries added to your path for this to work. 
+ - We implement `clean_subject()` to clean up the large downloaded files once we have generated the parcellated time series. Its input is a list of files to keep on disk. It _should_ return nothing but utilizing [`map`](https://docs.python.org/3/library/functions.html#map) for parallelizing means functions _have_ to return something (see below).
  - We also display disk usage statistics during runtime.
  - `automate.py` calls above functions using python's parallelism enabling modules
 
@@ -58,7 +58,7 @@ and get meaningful output.
 Prof. YMB suggested that having large amounts of RAM even with just a few cores should allow for some parallelization: each of the `*_subject()` functions should be parallelizable using the [`multiprocessing`](https://docs.python.org/3.7/library/multiprocessing.html) package. This is easy a la [functional programming](https://en.wikipedia.org/wiki/Functional_programming)!
 
  - The `do_subject()` function chains together the above functions so that we can use `multiprocessing.Pool.map()` function on our list of subject ids. The last function in the chain should return the final python object to be stored on disk corresponding to each subject.
- - We implement a `process_ptseries()` function that can be called by `clean_subject()`. This function should take the generated _*ptseries*_ file and return a python dictionary containing ROI names and related time series. The `clean_subject()` function, that originally had nothing to return, can now return this object so that `map` works. (recall, `map` applies a function to each element of a list, and in particular can _never_ change the length of a list).
+ - We implement a `process_ptseries()` function that can be called by `clean_subject()`. This function should take the generated _*ptseries*_ file in CIFTI2 format and return a python dictionary containing ROI names and related time series. This function utilizes an `[R` module](https://cran.r-project.org/web/packages/cifti/index.html) under the hood which should get automatically installed. The `clean_subject()` function, that originally had nothing to return, can now return this object so that `map` works. (recall, `map` applies a function to each element of a list, and in particular can _never_ change the length of a list).
 
 Note how `do_subject` really only does:
 	
