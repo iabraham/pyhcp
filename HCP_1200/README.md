@@ -1,3 +1,6 @@
+The file metadata.csv contains publicly accessible metadata regarding the scans in the HCP S1200 release. In using this repository and the data contained in it you are agreeing to the Open Access Terms established by the Connectome Organization.
+
+
 # How to use shelved Py object
 
 The code on successful run should place three files called `hcp_data.dat`, `hcp_data.bak` and `hcp_data.dir` in the `HCP_1200` folder. You can access the content of these files as follows:
