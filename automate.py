@@ -16,11 +16,9 @@ def main():
         utils = importr('utils')
         utils.install_packages('cifti')
 
-
     with open('subjectlist.txt') as stream:
         subject_ids = stream.readlines()
 
-    
     # Strip newline characters
     subject_ids = [idx.strip() for idx in subject_ids]
 

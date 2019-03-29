@@ -43,7 +43,7 @@ def download_subject(sname):
     # Loop through keys and use download_file to download each key (file) to the directory where this code is running.
     for key in filtered_list: 
         try:
-    	# Respect the directory structure
+            # Respect the directory structure
             os.makedirs(os.path.dirname(key), exist_ok=True)
             if not Path(key).is_file():
                 s3.Bucket(BUCKET_NAME).download_file(key, key)
@@ -109,7 +109,6 @@ def du(path):
         return subprocess.check_output(['du','-sh', path]).split()[0].decode('utf-8')
     else:
         return subprocess.check_output(['powershell', win_string])
-
 
 
 def process_ptseries(ptseries):
