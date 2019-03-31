@@ -62,6 +62,6 @@ with shelve.open('test_shelf.gdb', flag='r') as s:
     print('Existing:', s['key1'])
 ```
 
-on the Python prompt to confirm you get the error: `_gdbm.error: Reader can't store`.  If the problem is **not** fixed the output will be `Existing: new value` which the readonly flag did **not work.**. 
+on the Python prompt to confirm you get the error: `_gdbm.error: Reader can't store`.  If the problem is **not** fixed the output will be `Existing: new value` which means the readonly flag did **not work.**. 
 
 
