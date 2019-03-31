@@ -28,3 +28,40 @@ with zipshelve.open(fin, mode='r') as shelf:
 ```
 
 The [`shelve`](https://docs.python.org/3/library/shelve.html) module wraps around pickling, by loading only the necessary key from disk (as opposed to `pickle.load()` which would load the whole data-set into memory). We move from `pickle` to `shelve` because pickling the whole data set will likely cause memory issues. The use of disk as opposed to RAM for hold data will cause some parallelization challenges, but that is to be worked out. 
+
+# A `gdbm` issue
+
+On Linux machines, if the `gdbm` module is not installed then `shelve` modules' readonly flag when opening does not work. This is an issue caused by the fact that Anaconda environment uses its own `lib-dynload` directory so even running
+
+`sudo apt-get install python3-gdbm` 
+
+may not fix the issue. To get around this (after running the above command) run:
+
+`dpkg -L python3-gdbm`
+
+and examine the output for a file with name of the form: `_gdbm.cpython-3Xm-x86_64-linux-gnu.so`. This is the dynamic library we need. Then with the Anaconda environment activated run:
+
+`cd $(python -c 'import sys; [print(x) for x in sys.path if "lib-dynload" in x]')`
+
+to `cd` into the Anaconda environment's `lib-dynload` folder. Next copy the above file dependeing on `36m` or `37m` into this folder. This should fix the issue. To confirm run:
+
+```Python
+import shelve
+
+with shelve.open('test_shelf.gdb') as s:
+    s['key1'] = {'int': 10,'float': 9.5, 'string': 'Sample data'}
+
+with shelve.open('test_shelf.gdb', flag='r') as s:
+    existing = s['key1']
+
+with shelve.open('test_shelf.gdb', flag='r') as s:
+    print('Existing:', s['key1'])
+    s['key1'] = 'new value'
+
+with shelve.open('test_shelf.gdb', flag='r') as s:
+    print('Existing:', s['key1'])
+```
+
+on the Python prompt to confirm you get the error: `_gdbm.error: Reader can't store`.  If the problem is **not** fixed the output will be `Existing: new value` which the readonly flag did **not work.**. 
+
+
