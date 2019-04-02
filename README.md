@@ -37,19 +37,20 @@ This is  a short explanation of the inner workings of the code in this repositor
 #### Testing 1
 If you have Amazon S3 and `boto` set up correctly with your credentials, you should be able to activate your environment, fire up python, and run 
 
-	from download_hcp import *
-	    dfiles = download_subject('100610')
-	
+```Python
+from download_hcp import *
+dfiles = download_subject('100610')
+```
 and get no errors. 
 
 
 #### Testing 2
 If you have workbench installed and correctly added to path, then in your conda environment, you should be able to fire up python and say 
 
-	import subprocess
-	subprocess.run(['wb_command','-help'])
-	
-
+```Python
+import subprocess
+subprocess.run(['wb_command','-help'])
+```
 and get meaningful output. 
 
 ## Parallelizing 
@@ -61,16 +62,15 @@ Prof. YMB suggested that having large amounts of RAM even with just a few cores 
 
 Note how `do_subject` really only does:
 	
-	clean_subject(idx, process_subject(*download_subject(idx)))
+```clean_subject(idx, process_subject(*download_subject(idx)))```
 
 and parallelization only involves:
 
-	with mp.Pool(N) as pool:
-    	    result = pool.map(do_subject, subject_ids)
-	
-
+```Python
+with mp.Pool(N) as pool:
+    result = pool.map(do_subject, subject_ids)
+```
 where `N` is the number of parallel processes. That's so clean even I am surprised that it worked out this way.
-
 
 ---
 
@@ -80,61 +80,39 @@ where `N` is the number of parallel processes. That's so clean even I am surpris
 
 We utilize an R module in this repo. If you set up the environment using the provided .yml file, and it worked without errors you should be good. Else you need to first, install rpy2 for conda using:
 
-	conda install rpy2
+```conda install rpy2```
 
 on your environment in use. That should install the R packages needed to use R from within python. Next install the `cifti` package from CRAN:
-	
-	# import rpy2's package module
-	import rpy2.robjects.packages as rpackages
-	
-	# import R's utility package
-	utils = rpackages.importr('utils')
-	utils.install_packages('cifti')
 
+```Python
+# import rpy2's package module
+import rpy2.robjects.packages as rpackages
+	
+# import R's utility package
+utils = rpackages.importr('utils')
+utils.install_packages('cifti')
+```
 It should prompt you to pick a CRAN server for the session. If the installation is successful, it should end with
 
-	.
-	.
-	** building package indices
-	** installing vignettes
-	** testing if installed package can be loaded
-	* DONE (cifti)
+    .
+    .
+    ** building package indices
+    ** installing vignettes
+    ** testing if installed package can be loaded
+    * DONE (cifti)
 
 You can confirm successful installation by opening python and running:
-	
-	from rpy2.robjects.packages import importr
-	importr('cifti')
-	
+
+```Python
+from rpy2.robjects.packages import importr
+importr('cifti')
+```
 which should return:
  
-	>>> importr('cifti')
-	rpy2.robjects.packages.Package as a <module 'cifti'>
+    >>> importr('cifti')
+    rpy2.robjects.packages.Package as a <module 'cifti'>
 
 You may have to install a development packageis on your system for `xml2`, etc. Just use `sudo apt-get install xml2-dev` or whatever is missing. 
 
 Alternatively, you can set up the environment using the `environment.yml` file.
-
-# How to use pickled Py object
-
-The code on successful run should place a file called `hcp_data.bin` in the `HCP_1200` folder. You can access the content of this file as follows:
-
-    import gzip, pickle
-    import numpy as np
-
-    with gzip.open('hcp_data.bin') as s:
-        data = pickle.load(s)
-
-    print('Have subjects:')
-
-    for key in data.keys():
-        print('\t' + str(key))
-
-    for key, scans in data.items():
-        print('\nFor subject: ' + str(key) + '\thave:')
-        for scan, data_dict in scans.items():
-            if scan != 'metadata':
-                print('Scan: \t', scan)
-                print('With ROIs:\n', '\n'.join(list(data_dict.keys())))
-            else:
-                print('Subject age:\t', data_dict.loc['Age'])
 

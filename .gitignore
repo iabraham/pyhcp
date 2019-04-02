@@ -4,4 +4,5 @@ __*
 *.bak
 !HCP_1200/.gitkeep
 !HCP_1200/meta_data.csv
+!HCP_1200/README.md
 *.pyc
