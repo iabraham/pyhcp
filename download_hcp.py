@@ -30,18 +30,20 @@ def download_subject(sname):
     bucket = s3.Bucket(BUCKET_NAME)
 
     # Append all keys( file names with full path) to a list
-    key_list = [str(key.key) for key in bucket.objects.filter(Prefix='HCP_1200/' + sname)]
+    key_list = (str(key.key) for key in bucket.objects.filter(Prefix='HCP_1200/' + sname))
 
     print('-'*10, ' Downloading data for ...', sname)
 
     keyword1='Atlas_MSMAll_hp2000_clean.dtseries.nii'
     keyword2='aparc.32k_fs_LR.dlabel.nii'
-    filtered_list1 = list(filter(lambda x: (keyword1 in x ), key_list))
-    filtered_list2 = list(filter(lambda x: (keyword2 in x ), key_list))
-    filtered_list = filtered_list1 + filtered_list2
+    filtered_list = filter(lambda x: (keyword1 in x or keyword2 in x), key_list)
+    dense_time_series, parcel_labels = list(), list()
+
+    # filtered_list2 = list(filter(lambda x: (keyword2 in x ), key_list))
+    # filtered_list = filtered_list1 + filtered_list2
 
     # Loop through keys and use download_file to download each key (file) to the directory where this code is running.
-    for key in filtered_list: 
+    for key in filtered_list:
         try:
             # Respect the directory structure
             os.makedirs(os.path.dirname(key), exist_ok=True)
@@ -55,8 +57,15 @@ def download_subject(sname):
             else:
                 raise KeyError
 
-   #return dense_time_series, parcellation_labels, subject name
-    return filtered_list1, filtered_list2, sname
+        if keyword1 in key:
+            dense_time_series.append(key)
+        elif keyword2 in key:
+            parcel_labels.append(key)
+        else:
+            raise LookupError
+
+    # return dense_time_series, parcellation_labels, subject name
+    return dense_time_series, parcel_labels, sname
 
 
 def process_subject(dtseries, dlabels, sid):
