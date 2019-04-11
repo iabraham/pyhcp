@@ -145,9 +145,16 @@ def process_ptseries(ptseries):
     # We create a dictionary with roi_names as keys and rows 
     # of data matrix as values and return it 
 
-    datum_dict = dict(zip(roi_names, np.asarray(cifti_dict['data']))) 
+    datum_dict = dict(zip(roi_names, np.asarray(cifti_dict['data'])))
 
-    return ptseries, datum_dict 
+    renamer = {'rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.ptseries.nii': 'REST1_LR',
+               'rfMRI_REST1_RL_Atlas_MSMAll_hp2000_clean.ptseries.nii': 'REST1_RL',
+               'rfMRI_REST2_LR_Atlas_MSMAll_hp2000_clean.ptseries.nii': 'REST2_LR',
+               'rfMRI_REST2_RL_Atlas_MSMAll_hp2000_clean.ptseries.nii': 'REST2_RL'}
+
+    lookup = ptseries.split('/')[-1]
+
+    return renamer[lookup], datum_dict
 
 
 def clean_subject(subject_id, keep_files):

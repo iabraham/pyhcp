@@ -23,7 +23,7 @@ def main():
 
     # Strip newline characters
     subject_ids = [idx.strip() for idx in subject_ids]
-    fin = 'HCP_1200/hcp_data'
+    fin = 'HCP_1200/hcp_data.gdb'
 
     # Download and process. `procs` is # of processors
     procs = 4
@@ -39,8 +39,8 @@ def main():
 
     print(datetime.now())
 
-    # Serial instead of parallel?
-
+    # # Serial instead of parallel?
+    #
     # datum = dict()
     # for idx in subject_ids:
     #     datum[idx] = do_subject(idx)
@@ -48,7 +48,6 @@ def main():
     # with zipshelve.open(fin, protocol=HIGHEST_PROTOCOL) as shelf:
     #     for key, value in datum:
     #         shelf[key] = value
-
 
 
 if __name__ == "__main__":
