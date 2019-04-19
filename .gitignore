@@ -6,3 +6,4 @@ __*
 !HCP_1200/meta_data.csv
 !HCP_1200/README.md
 *.pyc
+test*
