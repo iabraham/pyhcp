@@ -40,7 +40,7 @@ def main():
     for i, batch in enumerate(batches(subject_ids, batch_size)):
         
         with mp.Pool(procs) as pool:
-            result = zip(subject_ids, pool.map(do_subject, batch))
+            result = zip(batch, pool.map(do_subject, batch))
 
         print('Shelving batch: \t', i)
         fname = fin + str(i) + '.gdb'
