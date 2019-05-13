@@ -5,7 +5,6 @@ from rpy2.robjects.packages import importr
 import numpy as np 
 import pandas as pd
 
-
 # Load meta data as pandas data frame. Don't put this inside a function, 
 # so we don't have to read file from disk each time. 
 
@@ -36,7 +35,8 @@ def download_subject(sname):
 
     keyword1='Atlas_MSMAll_hp2000_clean.dtseries.nii'
     keyword2='aparc.32k_fs_LR.dlabel.nii'
-    filtered_list = filter(lambda x: (keyword1 in x or keyword2 in x), key_list)
+    filtered_list = filter(lambda x: (keyword1 in x or keyword2 in x) and '7T' not in x, key_list)
+    
     dense_time_series, parcel_labels = list(), list()
 
     # filtered_list2 = list(filter(lambda x: (keyword2 in x ), key_list))
