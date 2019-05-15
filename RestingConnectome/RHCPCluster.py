@@ -14,6 +14,25 @@ reduction_methods = {'pca': PCA(),
                      'trunc_svd': TruncatedSVD(n_components=2278, n_iter=100)}
 
 
+def _plotted_artists(ax):
+    """ Return all the matplotlib artist objects associated with given axis object."""
+    
+    artists = (ax.lines + ax.patches + ax.collections + ax.images + ax.containers)
+    return artists
+
+
+def _formatter(**kwargs):
+    """Helper function for mpldatacursor package."""
+
+    return kwargs['point_label'].pop()
+
+
+def _label_generator(sample):
+    l1 = sample['Name']
+    l2 = '-'.join((sample['Session'], sample['Run']))
+    return "\n".join((l1,l2))
+
+
 class RHCPCluster(RHCPBase):
     """ A subclass of RHCPBase that handles the visualization options """
 
@@ -56,7 +75,6 @@ class RHCPCluster(RHCPBase):
 
         mpl.show(block=block)
    
-
     def _parse_plot_args(self, session, run, samples):
         """ Helper function to parse arguments appropriately. """
 
@@ -67,10 +85,10 @@ class RHCPCluster(RHCPBase):
         elif session is not None and run is None:
             return iter([sample for sample in samples if sample['Session']==session])
         elif session is not None and run is not None:
-            return iter([sample for sample in samples if sample['Session']==session and sample['Run']==run])
+            return iter([sample for sample in samples if 
+                         sample['Session']==session and sample['Run']==run])
         else:
             raise AssertionError
-
 
     def show_mat(self, sub, mat='ULM', session=None, run=None, block=True):
         """ A function to visualize the matrices associated with samples.
@@ -81,8 +99,8 @@ class RHCPCluster(RHCPBase):
                 session: Session identifier for the matrix of interest (optional)
                 run: Run in the session specified (optional).
 
-            If keyword arguments are not specified function displays the unsorted lead matrix for all instances of the
-            subject that it found.
+            If keyword arguments are not specified function displays the unsorted lead matrix 
+            for all instances of the subject that it found.
         """
 
         matplotlib.rcParams.update({'font.size': 16})
@@ -100,7 +118,6 @@ class RHCPCluster(RHCPBase):
         mpl.show(block=block)
         matplotlib.rcdefaults()
 
-
     def scatter(self, fig, ax, mat='ULM'):
         """ Function to make a 2D scatter plot of data by 'group' using dimension reduction method.
 
@@ -112,39 +129,14 @@ class RHCPCluster(RHCPBase):
             `group` is tentatively gender. 
         """
         import mpldatacursor
+        per_scatter_label = self._plot_by_group(ax, mat, ["M", "F"])
 
-        def plotted_artists(ax):
-            artists = (ax.lines + ax.patches + ax.collections + ax.images + ax.containers)
-            return artists
-
-        def formatter(**kwargs):
-            return kwargs['point_label'].pop()
-
-        col = ['b', 'g', 'r', 'c', 'm', 'y', 'k']   # List of colors
-        used = []                                   # List of used colors
-        per_scatter_label = list()                  # We need a list of labels per call to scatter
-
-        n = len(self.rois)
-
-        for group in ['M', 'F']: # Currently this is gender, but can look at other options. 
-
-            by_group = [sample for sample in self if sample["Metadata"].loc["Gender"] == group]
-            (label, data) = zip(*[(sample['Name'] + '\n' + sample['Session'] + '-' + sample['Run'] + '-' +
-                                   '\n' + group, sample[mat][np.triu_indices(n, 1)]) 
-                                   for sample in by_group])
-            xy = self._dim_reducer.fit_transform(np.asarray(data))
-            c = nprandom.choice(col)
-            while c in used:
-                c = nprandom.choice(col)
-            used.append(c)
-            ax.scatter(xy[:, 0], xy[:, 1], c=c, label=group)
-            per_scatter_label.append(label)
- 
         axes = [ax for ax in fig.axes]
-        scatters = [artist for ax in axes for artist in plotted_artists(ax)]
+        scatters = [artist for ax in axes for artist in _plotted_artists(ax)]
  
         point_labels = dict(zip(scatters, per_scatter_label))
-        mpldatacursor.datacursor(formatter=formatter, point_labels=point_labels, display='multiple')
+        mpldatacursor.datacursor(formatter=_formatter, 
+                                 point_labels=point_labels, display='multiple')
         ax.legend()
  
         ax.grid(True)
@@ -154,7 +146,6 @@ class RHCPCluster(RHCPBase):
 
     def phase_plot(self, fig, axis, sub, session, run):
         raise NotImplementedError
-
 
     def _label_point(self, **kwargs):
         """ A helper function for `mpldatacursor`. Generates a string to display when a scatter
@@ -214,3 +205,27 @@ class RHCPCluster(RHCPBase):
         mpl.title(sample['Name'] + '-' + sample['Session'] + '-' + sample['Run'])
         mpl.xlabel('Time')
         mpldatacursor.datacursor(formatter='{label}'.format)
+
+
+    def _plot_by_group(self, ax, mat, groups):
+
+        col = ['b', 'g', 'r', 'c', 'm', 'y', 'k']   # List of colors
+        used = []                                   # List of used colors
+        per_scatter_label = list()                  # We need a list of labels per call to scatter
+        n = len(self.rois)
+
+        for group in groups: # Currently this is gender, but can look at other options.
+            by_group = [sample for sample in self if sample["Metadata"].loc["Gender"] == group]
+            (label, data) = zip(*[(_label_generator(sample)+'\n' + group, 
+                                  sample[mat][np.triu_indices(n, 1)]) for sample in by_group])
+            xy = self._dim_reducer.fit_transform(np.asarray(data))
+            c = nprandom.choice(col)
+            while c in used:
+                c = nprandom.choice(col)
+            used.append(c)
+            ax.scatter(xy[:, 0], xy[:, 1], c=c, label=group)
+            per_scatter_label.append(label)
+
+        return per_scatter_label
+
+
