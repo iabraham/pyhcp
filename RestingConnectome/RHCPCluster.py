@@ -6,7 +6,8 @@ import numpy as np
 from numpy import random as nprandom
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA, TruncatedSVD, FactorAnalysis, KernelPCA
-
+import mpldatacursor
+from copy import deepcopy
 
 reduction_methods = {'pca': PCA(), 
                      'kpca': KernelPCA(kernel='rbf'),
@@ -28,9 +29,35 @@ def _formatter(**kwargs):
 
 
 def _label_generator(sample):
+    """ Helper function to generate labels for scatter plot. """
     l1 = sample['Name']
     l2 = '-'.join((sample['Session'], sample['Run']))
     return "\n".join((l1,l2))
+
+
+def _plot_evec(fig, ax, sample, threshold_function):
+    """ Helper function to plot elements of eigenvector around complex plane. """
+
+    v = sample['Phases'][sample['Permutation']]
+    # v = sample['Phases']
+    title = sample['Name'] + ' in ' + sample['Session'] + '-' + sample['Run'] 
+    fname = 'figures/' + sample['Name'] + '_' + sample['Session'] + '_' + sample['Run']
+    lim = max(np.abs(np.amax(v)), np.abs(np.amin(v)))
+    circ = mpl.Circle((0, 0), lim, color='k', fill=False)
+    x = np.real(v).flatten()
+    y = np.imag(v).flatten()
+    ax.plot(x, y, 'ko:')
+    ax.plot(x[0], y[0], 'ro')
+    ax.add_artist(circ)
+    ax.grid()
+    mpl.title(title)
+    mpl.xlim(xmax=1.1 * lim, xmin=-1.1 * lim)
+    mpl.ylim(ymax=1.1 * lim, ymin=-1.1 * lim)
+    lim = threshold_function(v)
+    circ = mpl.Circle((0, 0), lim, color='b', fill=False, linestyle='dotted')
+    ax.add_artist(circ)
+
+    return list(sample['Permutation']), x, y
 
 
 class RHCPCluster(RHCPBase):
@@ -49,6 +76,7 @@ class RHCPCluster(RHCPBase):
         dim_reduction = kwargs.pop('dim_reduction')
         super().__init__(shelf, **kwargs)
         self._dim_reducer = reduction_methods[dim_reduction]
+        self.mat_names = {'CRM': 'Correlation Matrix', 'ULM': 'Lead Matrix'}
 
     def show_time_series(self, sub, run=None, session=None, rois=None, mat='TimeSeries', block=True):
         """ Function to display the time series data.
@@ -144,8 +172,33 @@ class RHCPCluster(RHCPBase):
         mpl.ylabel('Principal direction 2')
         mpl.title('Scatter plot')
 
-    def phase_plot(self, fig, axis, sub, session, run):
-        raise NotImplementedError
+    def plot_rank(self, sub, session=None, run=None, mat='ULM'):
+        """Function to make stem plots of the absolute value of the eigenvalues of the given mat """
+
+        # Get all name matches
+        sub_samples = [sample for sample in self if sample['Name'] == sub]
+
+        if sub_samples is None:
+            print('Error! Subject not found')
+        else:
+            # Depending on arguments plot appropriately
+            for item in sub_samples:
+                mpl.figure()
+                eigs, _ = np.linalg.eig(item[mat])
+                mpl.stem(np.abs(eigs))
+                mpl.title(self.mat_names[mat] + item['Name'] + ':' + item['Session'] + '-' + item['Run'])
+
+    def phase_plot(self, sub, session=None, run=None, threshold='rms'):
+
+        threshold_function = {'rms':  lambda x : np.sqrt(np.mean(np.square(np.abs(x)))),
+                              'mean': lambda x :np.mean(np.abs(x))}
+        sub_samples = [sample for sample in self if sample['Name']==sub]
+
+        for sample in self._parse_plot_args(session, run , sub_samples):
+            fig = mpl.figure()
+            ax = fig.add_subplot(111)
+            perm, x, y = _plot_evec(fig, ax, sample, threshold_function[threshold])
+            self._phase_labels(fig, ax, perm, x, y)
 
     def _label_point(self, **kwargs):
         """ A helper function for `mpldatacursor`. Generates a string to display when a scatter
@@ -186,8 +239,6 @@ class RHCPCluster(RHCPBase):
                     plot in the visualization. 
         """
 
-        import mpldatacursor 
-
         if not rois:
             mpl.figure()
             for index, row in enumerate(sample[matrix].tolist()):
@@ -208,6 +259,14 @@ class RHCPCluster(RHCPBase):
 
 
     def _plot_by_group(self, ax, mat, groups):
+        """ Helper function to create a seperate/overlayed scatter plot for each group. 
+            Funciotn should be called by the scatter function. 
+        
+        Argument:
+            ax - A matplotlib Axis object to use 
+            mat - The kind of matrix to be used
+            groups - What groups are there in the analysis?
+        """
 
         col = ['b', 'g', 'r', 'c', 'm', 'y', 'k']   # List of colors
         used = []                                   # List of used colors
@@ -227,5 +286,27 @@ class RHCPCluster(RHCPBase):
             per_scatter_label.append(label)
 
         return per_scatter_label
+
+
+    def _phase_labels(self, fig, ax, perm, x, y):
+        """ Helper function to make the label elements in a phase plot. """
+    
+        label= list()
+        for item in perm:
+            label.append(self.rois[item])
+        print_label = deepcopy(label)
+        to_disp = '\n'.join(print_label)
+        axes = [ax for ax in fig.axes]
+        scatters = [artist for ax in axes for artist in _plotted_artists(ax)]
+        pointlabel = {scatters[0]:label}
+#        mpl.subplots_adjust(left=0.25)
+#        mpl.gcf().text(0.02, 0.15, to_disp)
+        num_label = [str(i) for i in range(1,69)]
+        for label,x,y in zip(num_label,x,y):
+            mpl.text(x+0.005,y+0.005,label)
+        # mpl.show(block=False)
+        # mpl.savefig(fname)
+        mpldatacursor.datacursor(formatter=_formatter, point_labels=pointlabel, display='multiple')
+
 
 
