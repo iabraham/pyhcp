@@ -123,6 +123,7 @@ class RHCPBase:
         self.removed_counter, self.data_counter = dict(), dict()
         self.sessions, self.runs = set(), set()
         self.covariance_matrix, self.projectors, self.cov_eigenvalues = None, None, None
+        self.n_males, self.n_females, self.age_data = None, None, None
         self.__reset()
 
     def __dim__(self):
@@ -137,28 +138,57 @@ class RHCPBase:
     def __iter__(self):
         yield from self.samples
 
+    def __str__(self):
+        if not self.samples:
+            return "Uninitialized RestingConnectome Data Object"
+        else:
+            header = "="*80
+            title = "\t\tRestingConnectome data object\n"
+            n_unique = len(set([sample['Name'] for sample in self]))
+            string_uni = f"Number of unique subjects: {n_unique}"
+            n_men = f"Number of men: {self.n_males}"
+            n_women = f"Number of women: {self.n_females}"
+            n_age1 = f"\nNumber of subjects in age group '22-25':\t{self.age_data['22-25']}"
+            n_age2 = f"Number of subjects in age group '26-30':\t{self.age_data['26-30']}"
+            n_age3 = f"Number of subjects in age group '31-35':\t{self.age_data['31-35']}"
+            n_age4 = f"Number of subjects in age group ' >=36':\t{self.age_data['36+']}"
+            n_bold = f"\nTotal number of BOLD time series: {len(self)}"
+            footer = "="*80
+    
+            return "\n".join((header, title, string_uni, n_men, n_women, n_age1, n_age2, 
+                              n_age3, n_age4, n_bold, footer))
+
     def __reset(self):
         """ Re-calculates covariance structure.
 
-            The reset() method is useful after removing or adding data to the analysis - often we remove outliers or subjects that showed too much motion.
+            The reset() method is useful after removing or adding data to the analysis 
+            - often we remove outliers or subjects that showed too much motion.
         """
         if not self.samples:
             print('Error: Data has not been loaded yet!')
         else:
             self.sessions = set([sample['Session'] for sample in self.samples])
             self.runs = set([sample['Run'] for sample in self.samples])
-            temp_var = [self.samples[i]["ULM"][np.triu_indices(len(self.rois), 1)] for i in range(len(self))]
+            temp_var = [sample["ULM"][np.tril_indices_from(sample['ULM'],1)] for sample in  self]
             self.covariance_matrix = np.cov(np.asarray(temp_var).T)
             self.projectors, self.cov_eigenvalues, _ = np.linalg.svd(self.covariance_matrix)
+            self.n_males = len(set([sample['Name'] for sample in self 
+                                    if sample['Metadata'].loc['Gender']=='M']))
+            self.n_females = len(set([sample['Name'] for sample in self 
+                                      if sample['Metadata'].loc['Gender']=='F']))
+            temp_var = set([sample["Metadata"].loc["Age"] for sample in self])
+            self.age_data = {item: len(set([sample["Name"] for sample in self 
+                                        if sample['Metadata'].loc["Age"]==item])) for item in temp_var}
 
     def remove_roi(self, roi):
-        """ Function to remove a region of interest from the data set (from all samples). Must call recompute.
+        """ Function to remove a region of interest from the data set (from all samples). 
+            Must call recompute.
 
             Arguments:
                 roi: The roi to be removed specified as a string.
 
-            Function is destructive, a roi removed from analysis cannot be added back in.  The instance's recompute
-            method must be called manually.
+            Function is destructive, a roi removed from analysis cannot be added back in.  
+            The instance's recompute method must be called manually.
         """
 
         if roi in self.rois:
@@ -168,6 +198,40 @@ class RHCPBase:
             self.rois.remove(roi)
         else:
             raise LookupError
+    
+    def mod_samples(self, op, idxs):
+        """ Function to add or remove samples from analysis. 
+        
+            Arguments:
+                op: The operation to perform, 'add' or 'rem' (remove). Type is string.
+                idxs: The names of the subjects that you want to add or remove from analysis.
+                    Type is a list of strings
+        """
+        if not type(idxs) == list:
+            print('Error: mod_samples must be called with a list of sample names!')
+        if op == 'rem':
+            for idx in idxs:
+                idx_list = [sample for sample in self.samples if sample['Name'] == idx]
+                if idx_list != []:
+                    for item in idx_list:
+                        self.deleted_samples.append(item)
+                        self.samples.remove(item)
+                else:
+                    raise KeyError
+        elif op == 'add':
+            for idx in idxs:
+                idx_list = [sample for sample in self.deleted_samples if sample['Name'] == idx]
+                if idx_list != []:
+                    for item in idx_list:
+                        self.samples.append(item)
+                        self.deleted_samples.remove(item)
+                else:
+                    raise KeyError
+        else:
+            print("Argument `op` must be one of 'rem', 'add'")
+            raise TypeError
+        self.__reset()
+        return self
 
     def edit_time_series(self, sub, run, session, edit_idx):
         """ Function to edit a specific time series entity. MUST CALL recompute manually.
