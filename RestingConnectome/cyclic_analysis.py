@@ -96,9 +96,11 @@ def sort_lead_matrix(LM, p=1):
 #     lead_matrix = create_lead_matrix(normed_data)
 #     return sort_lead_matrix(lead_matrix, p), normed_data
 
+
 def cyclic_analysis(data, p):
     lead_matrix = create_lead_matrix(match_ends(data))
     return sort_lead_matrix(lead_matrix, p) 
+
 
 def wilks_lambda(data, classes):
     n_classes = set(classes)

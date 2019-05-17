@@ -53,9 +53,9 @@ def _low_pass(low_cut, high_cut, fs, filter_name, order=5):
 
 # Maintain a private dictionary of filters to use
 _filters = {'band1': _band_pass(low_cut=0.008, high_cut=0.08, fs=1/0.72, filter_name='bessel'),
-           'band2': _band_pass(low_cut=0.008, high_cut=0.5, fs=1/0.72, filter_name='bessel'),
-           'low_pass': _low_pass(low_cut=0.00, high_cut=0.6, fs=1/0.72, filter_name='bessel'),
-           None: lambda x: x}
+            'band2': _band_pass(low_cut=0.008, high_cut=0.5, fs=1/0.72, filter_name='bessel'),
+            'low_pass': _low_pass(low_cut=0.00, high_cut=0.6, fs=1/0.72, filter_name='bessel'),
+             None: lambda x: x}
 
 
 class RHCPBase:
@@ -85,6 +85,7 @@ class RHCPBase:
         # For convenience parse into more familiar terminology
         self._session_sort = {'REST1_LR': 'Session1', 'REST1_RL': 'Session1',
                               'REST2_LR': 'Session2', 'REST2_RL': 'Session2'}
+        
         self._run_sort = {'REST1_LR': 'Run1', 'REST1_RL': 'Run2', 
                           'REST2_LR': 'Run1', 'REST2_RL': 'Run2'}
 
@@ -94,15 +95,21 @@ class RHCPBase:
             for scan, data in scans.items():
                 if scan != 'metadata':
                     time_series = self._gsr[gsr](np.asarray(list(data.values())).T)
-                    time_series = self._norm(ca.detrend(ca.mean_center(time_series)))
+                    normed_ts = self._norm(ca.detrend(ca.mean_center(time_series)))
+#                    cyc_normed_ts = self._norm(ca.detrend(ca.mean_center(ca.match_ends(time_series))))
 
                     if filter_type:
-                        time_series = filtfilt(*self._filter, time_series)
+                        normed_ts = filtfilt(*self._filter, time_series)
 
-                    ret = ca.cyclic_analysis(time_series, p=1)
-                    lm, phases, perm, sorted_lm, eigenvalues = ret      # Lead matrix
-                    cvm = np.cov(time_series) * time_series.shape[1]    # Covariance matrix
-                    crm = np.corrcoef(time_series)                      # Correlation matrix
+                    lret = ca.cyclic_analysis(normed_ts, p=1)
+                    lm, lphases, lperm, sorted_lm, leigenvalues = lret  # Lead matrix
+                    cvm = np.cov(normed_ts) * normed_ts.shape[1]        # Covariance matrix
+                    crm = np.corrcoef(normed_ts)                        # Correlation matrix
+                    
+                    fhm = cvm + 1j*lm                                   # Fused Hermmitian matrix
+                    fret = ca.sort_lead_matrix(fhm)
+                    _, fphases, fperm, _, feigenvalues = fret
+
                     
                     # Check if all samples have same ROIS
                     temp_rois = list(data.keys())
@@ -112,10 +119,11 @@ class RHCPBase:
                         roi_list.append(sorted(temp_rois))
                         raise Exception
 
-                    self.samples.append({'Name': key, 'TimeSeries': time_series,'ULM':  lm, 
-                                         'SLM': sorted_lm, 'CVM': cvm, 'Phases': phases, 'CRM': crm,
-                                         'Permutation': perm, 'Eigenvalues': eigenvalues,
-                                         'Session': self._session_sort[scan],
+                    self.samples.append({'Name': key, 'TimeSeries': normed_ts,'ULM':  lm, 
+                                         'SLM': sorted_lm, 'CVM': cvm, 'LPhases': lphases, 'CRM': crm,
+                                         'FHM': fhm, 'LPermutation': lperm, 'LEigenvalues': leigenvalues,
+                                         'Session': self._session_sort[scan],'FPermutation': fperm, 
+                                         'FEigenvalues': feigenvalues, 'FPhases': fphases,
                                          'Run': self._run_sort[scan], 'Metadata': scans['metadata']})
 
         self.rois = temp_rois

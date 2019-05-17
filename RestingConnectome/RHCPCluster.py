@@ -9,6 +9,10 @@ from sklearn.decomposition import PCA, TruncatedSVD, FactorAnalysis, KernelPCA
 import mpldatacursor
 from copy import deepcopy
 
+# Generally people want to look at a 2D visualization of the data set and they normally
+# use something like PCA for it. Here we provide some dimensionality reduction mehtods
+# for this purpose. 
+
 reduction_methods = {'pca': PCA(), 
                      'kpca': KernelPCA(kernel='rbf'),
                      'factor': FactorAnalysis(),
@@ -28,18 +32,22 @@ def _formatter(**kwargs):
     return kwargs['point_label'].pop()
 
 
-def _label_generator(sample):
+def _label_generator(sample, group):
     """ Helper function to generate labels for scatter plot. """
     l1 = sample['Name']
     l2 = '-'.join((sample['Session'], sample['Run']))
-    return "\n".join((l1,l2))
+    return "\n".join((l1, l2, group))
 
 
-def _plot_evec(fig, ax, sample, threshold_function):
+def _plot_evec(fig, ax, sample, threshold_function, phase):
     """ Helper function to plot elements of eigenvector around complex plane. """
 
-    v = sample['Phases'][sample['Permutation']]
-    # v = sample['Phases']
+    if phase == 'FPhases':
+        perm = 'FPermutation'
+    else:
+        perm = 'LPermutation'
+
+    v = sample[phase][sample[perm]]
     title = sample['Name'] + ' in ' + sample['Session'] + '-' + sample['Run'] 
     fname = 'figures/' + sample['Name'] + '_' + sample['Session'] + '_' + sample['Run']
     lim = max(np.abs(np.amax(v)), np.abs(np.amin(v)))
@@ -57,7 +65,7 @@ def _plot_evec(fig, ax, sample, threshold_function):
     circ = mpl.Circle((0, 0), lim, color='b', fill=False, linestyle='dotted')
     ax.add_artist(circ)
 
-    return list(sample['Permutation']), x, y
+    return list(sample[perm]), x, y
 
 
 class RHCPCluster(RHCPBase):
@@ -76,7 +84,7 @@ class RHCPCluster(RHCPBase):
         dim_reduction = kwargs.pop('dim_reduction')
         super().__init__(shelf, **kwargs)
         self._dim_reducer = reduction_methods[dim_reduction]
-        self.mat_names = {'CRM': 'Correlation Matrix', 'ULM': 'Lead Matrix'}
+        self.mat_names = {'CRM': 'Correlation Matrix', 'ULM': 'Lead Matrix', 'FHM': 'Fused Hermitian Matrix'}
 
     def show_time_series(self, sub, run=None, session=None, rois=None, mat='TimeSeries', block=True):
         """ Function to display the time series data.
@@ -93,10 +101,6 @@ class RHCPCluster(RHCPBase):
         # Get all samples with name match
         sub_samples = [sample for sample in self if sample['Name'] == sub]
 
-        if sub_samples is None:
-            print('Error! No such time series found!')
-            raise LookupError
-
         # Depending on arguments plot appropriately
         for sample in self._parse_plot_args(session, run, sub_samples):
             self._ts_plot_helper(sample, matrix=mat)
@@ -104,9 +108,10 @@ class RHCPCluster(RHCPBase):
         mpl.show(block=block)
    
     def _parse_plot_args(self, session, run, samples):
-        """ Helper function to parse arguments appropriately. """
+        """ Helper function to parse session and run arguments in plot functions appropriately. """
 
         if samples is None:
+            print('Error! No such combination found !')
             raise LookupError
         elif session is None:
             return iter(samples)
@@ -136,12 +141,9 @@ class RHCPCluster(RHCPBase):
         # Get all name matches
         sub_samples = [sample for sample in self if sample['Name'] == sub]
 
-        if sub_samples is None:
-            print('Error! Subject not found')
-        else:
-            # Depending on arguments plot appropriately
-            for sample in self._parse_plot_args(session, run, sub_samples):
-                self._mat_plot_helper(sample, matrix=mat)
+        # Depending on arguments plot appropriately
+        for sample in self._parse_plot_args(session, run, sub_samples):
+            self._mat_plot_helper(sample, matrix=mat)
 
         mpl.show(block=block)
         matplotlib.rcdefaults()
@@ -178,17 +180,14 @@ class RHCPCluster(RHCPBase):
         # Get all name matches
         sub_samples = [sample for sample in self if sample['Name'] == sub]
 
-        if sub_samples is None:
-            print('Error! Subject not found')
-        else:
-            # Depending on arguments plot appropriately
-            for item in sub_samples:
-                mpl.figure()
-                eigs, _ = np.linalg.eig(item[mat])
-                mpl.stem(np.abs(eigs))
-                mpl.title(self.mat_names[mat] + item['Name'] + ':' + item['Session'] + '-' + item['Run'])
+        # Depending on arguments plot appropriately
+        for item in self._parse_plot_args(session, run, sub_samples):
+            mpl.figure()
+            eigs, _ = np.linalg.eig(item[mat])
+            mpl.stem(np.abs(eigs))
+            mpl.title(self.mat_names[mat] + item['Name'] + ':' + item['Session'] + '-' + item['Run'])
 
-    def phase_plot(self, sub, session=None, run=None, threshold='rms'):
+    def phase_plot(self, sub, phase='LPhases', session=None, run=None, threshold='rms'):
 
         threshold_function = {'rms':  lambda x : np.sqrt(np.mean(np.square(np.abs(x)))),
                               'mean': lambda x :np.mean(np.abs(x))}
@@ -197,7 +196,7 @@ class RHCPCluster(RHCPBase):
         for sample in self._parse_plot_args(session, run , sub_samples):
             fig = mpl.figure()
             ax = fig.add_subplot(111)
-            perm, x, y = _plot_evec(fig, ax, sample, threshold_function[threshold])
+            perm, x, y = _plot_evec(fig, ax, sample, threshold_function[threshold], phase=phase)
             self._phase_labels(fig, ax, perm, x, y)
 
     def _label_point(self, **kwargs):
@@ -211,7 +210,7 @@ class RHCPCluster(RHCPBase):
                 pass
 
     def _mat_plot_helper(self, sample, matrix):
-        """ Helper function that does the actual plotting. For feature matrices. 
+        """ Helper function that does the actual plotting for feature matrices. 
 
             Arguments:
                 sample: An element of self.samples
@@ -223,14 +222,14 @@ class RHCPCluster(RHCPBase):
         try:
             mpl.imshow(sample[matrix], interpolation=None)
         except KeyError:
-            print('Error! Matrix not found. "mat" must be ULM, CM or SLM')
+            print('Error! Matrix not found.')
         mpl.title(matrix + '-' + sample['Name'] + ':' + sample['Session'] + '-' + sample['Run'])
         mpl.colorbar()
         mpldatacursor.datacursor(bbox=dict(alpha=1, fc='w'), formatter=self._label_point)
 
 
     def _ts_plot_helper(self, sample, matrix, rois=None):
-        """ Helper function that does actually plotting. For time-series data. 
+        """ Helper function that does actual plotting for time-series data. 
         
             Arguments:
                 sample: One element of self.samples
@@ -275,8 +274,10 @@ class RHCPCluster(RHCPBase):
 
         for group in groups: # Currently this is gender, but can look at other options.
             by_group = [sample for sample in self if sample["Metadata"].loc["Gender"] == group]
-            (label, data) = zip(*[(_label_generator(sample)+'\n' + group, 
-                                  sample[mat][np.triu_indices(n, 1)]) for sample in by_group])
+
+            (label, data) = zip(*[(_label_generator(sample, group), 
+                                  sample[mat][np.triu_indices_from(sample[mat], 1)]) 
+                                  for sample in by_group])
             xy = self._dim_reducer.fit_transform(np.asarray(data))
             c = nprandom.choice(col)
             while c in used:
