@@ -1,14 +1,16 @@
 The file metadata.csv contains publicly accessible metadata regarding the scans in the HCP S1200 release. In using this repository and the data contained in it you are agreeing to the Open Access Terms established by the Connectome Organization.
 
+The file `automate.py` in the parent folder downloads HCP data in batches and places them in one [`gdb`](https://www.gnu.org.ua/software/gdbm/) file per batch. 
+
 # How to use shelved Py object
 
-The code on successful run should place three files called `hcp_data.dat`, `hcp_data.bak` and `hcp_data.dir` in the `HCP_1200` folder. You can access the content of these files as follows:
+The code on successful run should place three files called `hcp_data_X.gdb` in the `HCP_1200` folder where the `X`'s correspond to batch number. You can access the content of these files as follows:
 
 ```python
 import zipshelve
 from pathlib import Path
     
-fin = Path('HCP_1200/hcp_data')
+fin = Path('HCP_1200/hcp_data_N.gdb')	#Replace N with integer appropriately
 	
 with zipshelve.open(fin, mode='r') as shelf:
     print('Have subjects:')
