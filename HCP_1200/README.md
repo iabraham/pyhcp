@@ -31,6 +31,8 @@ with zipshelve.open(fin, mode='r') as shelf:
 
 The [`shelve`](https://docs.python.org/3/library/shelve.html) module wraps around pickling, by loading only the necessary key from disk (as opposed to `pickle.load()` which would load the whole data-set into memory). We move from `pickle` to `shelve` because pickling the whole data set will likely cause memory issues. The use of disk as opposed to RAM for hold data will cause some parallelization challenges, but that is to be worked out. 
 
+**Note:** The files [`hcp_data.gdb`](https://uofi.box.com/s/lwbzqvrkswmwhjbmlxsh7o7gvi23sudc) (Illinois log-in required) and [`mini_hcp.gdb`](https://uofi.box.com/s/z25w1r25lc9swrna4dk3qccpky9tb6f7) (publicly available) mentioned in [`pyhcp/to_npz.py`](https://github.com/iabraham/pyhcp/blob/cyclicity/to_npz.py) can be downloaded.
+
 # A `gdbm` issue
 
 On Linux machines, if the `gdbm` module is not installed then `shelve` modules' readonly flag when opening does not work. This is an issue caused by the fact that Anaconda environment uses its own `lib-dynload` directory so even running
