@@ -9,7 +9,7 @@ import numpy as np
 from RestingConnectome.RHCPCluster import RHCPCluster
 
 # These files, `mini_hcp.gdb` and `hcp_data.gdb` are consolidated files (not 
-# a vailable in repo) generated on Campus Cluster by running `..\automate.py` 
+# available in repo) generated on Campus Cluster by running `..\automate.py` 
 # for many batches and combining results of the batch computation
 
 file1 = Path('mini_hcp.gdb') # 100 unique subjects
