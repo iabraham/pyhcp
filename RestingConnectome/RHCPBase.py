@@ -135,18 +135,30 @@ class RHCPBase:
         self.__reset()
 
     def __dim__(self):
+        """Return the dimensionality of the timeseries data, i.e. # of ROIS."""
         return len(self.rois)
 
     def __len__(self):
+        """Return how many fMRI scans are in the data set."""
         if not self.samples:
             return 0
         else:
             return len(self.samples)
 
     def __iter__(self):
+        """Define an iterator over the samples for use in list comprehensions."""
         yield from self.samples
 
+    def __getitem__(self, key):
+        """Allow for direct indexing via concrete instance of the class."""
+        return self.samples[key]
+
+    def __call__(self, name):
+        """Abuse call method to allow for name based indexing into samples."""
+        return [s for s in self if s['Name']==name]
+
     def __str__(self):
+        """ Pretty print statistics of the data set."""
         if not self.samples:
             return "Uninitialized RestingConnectome Data Object"
         else:
@@ -248,7 +260,7 @@ class RHCPBase:
                 sub: Name of subject to remove. String.
                 run: Specific run of that subject to edit. String.
                 session: The session the specified run belongs to. String.
-                edit_idx: Numpy s_ objects corresponding to slices in the time series that one wishes to KEEP.
+                edit_idx: Numpy s_ objects corresponding to slices in the time series one wishes to KEEP.
 
             All arguments are required to prevent accidental edits to time series data.
         """
