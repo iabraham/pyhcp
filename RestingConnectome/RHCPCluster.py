@@ -1,7 +1,6 @@
 from RestingConnectome.RHCPBase import RHCPBase
 import matplotlib.pyplot as mpl
 import matplotlib
-import pudb
 import numpy as np
 from numpy import random as nprandom
 from mpl_toolkits.mplot3d import Axes3D

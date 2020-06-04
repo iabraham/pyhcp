@@ -2,7 +2,6 @@ import numpy as np
 import RestingConnectome.cyclic_analysis as ca
 from tqdm import tqdm
 from scipy.signal import filtfilt, bessel, cheby2, butter
-import pudb
 
 def _band_pass(low_cut, high_cut, fs, filter_name, order=5):
     """ Helper function to implement band-pass filtering using the chosen filter.
